@@ -1,4 +1,4 @@
-import express, { Application, Request, Response } from 'express';
+import express, { Application, NextFunction, Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import organizationRoutes from './routes/organizationRoutes';
@@ -27,9 +27,10 @@ app.use((_req: Request, res: Response) => {
 });
 
 // Error handler
-app.use((err: Error, _req: Request, res: Response) => {
+app.use((err: Error & { status?: number }, _req: Request, res: Response, _next: NextFunction) => {
   console.error(err.stack);
-  res.status(500).json({ error: 'Internal server error' });
+  const status = err.status ?? 500;
+  res.status(status).json({ error: status === 500 ? 'Internal server error' : err.message });
 });
 
 app.listen(PORT, () => {
