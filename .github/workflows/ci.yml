@@ -40,8 +40,18 @@ jobs:
         run: npm run prisma:generate
       - name: Lint
         run: npm run lint
-      - name: Unit tests
-        run: npx vitest run
+
+      - name: Unit tests + coverage
+        run: npx vitest run --coverage
+
+      - name: Upload coverage report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-server
+          path: server/coverage/
+          retention-days: 7
+
       - name: Build (tsc = typecheck)
         run: npm run build
 
@@ -67,7 +77,16 @@ jobs:
         run: npm run lint
       - name: Typecheck
         run: npm run typecheck
-      - name: Unit tests
-        run: npx vitest run
+      - name: Unit tests + coverage
+        run: npx vitest run --coverage
+
+      - name: Upload coverage report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-client
+          path: client/coverage/
+          retention-days: 7
+
       - name: Build
         run: npm run build
