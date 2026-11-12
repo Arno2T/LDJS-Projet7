@@ -9,8 +9,9 @@ export default defineConfig({
     setupFiles: [],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-      exclude: ['node_modules/', 'dist/'],
+      reporter: ['text', 'html', 'lcov'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/tests/**', 'src/**/*.d.ts'],
     },
   },
 });
