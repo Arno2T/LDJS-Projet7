@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { organizationService } from '../services/organizationService';
 import { CreateOrganizationSchema, UpdateOrganizationSchema } from '../models/organizationModel';
+import { IdParamSchema } from '../models/commonModel';
 
 export const organizationController = {
   async getAll(_req: Request, res: Response): Promise<void> {
@@ -14,7 +15,13 @@ export const organizationController = {
 
   async getById(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
+      const parsed = IdParamSchema.safeParse(req.params);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Invalid id' });
+        return;
+      }
+      const { id } = parsed.data;
+
       const organization = await organizationService.getOrganizationById(id);
       res.json(organization);
     } catch (error) {
@@ -38,7 +45,13 @@ export const organizationController = {
 
   async update(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
+      const parsed = IdParamSchema.safeParse(req.params);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Invalid id' });
+        return;
+      }
+      const { id } = parsed.data;
+
       const validatedData = UpdateOrganizationSchema.parse(req.body);
       const organization = await organizationService.updateOrganization(id, validatedData);
       res.json(organization);
@@ -53,7 +66,13 @@ export const organizationController = {
 
   async delete(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
+      const parsed = IdParamSchema.safeParse(req.params);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Invalid id' });
+        return;
+      }
+      const { id } = parsed.data;
+  
       await organizationService.deleteOrganization(id);
       res.status(204).send();
     } catch (error) {

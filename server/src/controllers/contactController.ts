@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { contactService } from '../services/contactService';
 import { CreateContactSchema, UpdateContactSchema } from '../models/contactModel';
+import { IdParamSchema } from '../models/commonModel';
 
 export const contactController = {
   async getAll(_req: Request, res: Response): Promise<void> {
@@ -14,7 +15,13 @@ export const contactController = {
 
   async getById(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
+      const parsed = IdParamSchema.safeParse(req.params);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Invalid id' });
+        return;
+      }
+      const { id } = parsed.data;
+
       const contact = await contactService.getContactById(id);
       res.json(contact);
     } catch (error) {
@@ -38,7 +45,13 @@ export const contactController = {
 
   async update(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
+      const parsed = IdParamSchema.safeParse(req.params);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Invalid id' });
+        return;
+      }
+      const { id } = parsed.data;
+
       const validatedData = UpdateContactSchema.parse(req.body);
       const contact = await contactService.updateContact(id, validatedData);
       res.json(contact);
@@ -53,7 +66,13 @@ export const contactController = {
 
   async delete(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
+      const parsed = IdParamSchema.safeParse(req.params);
+      if (!parsed.success) {
+        res.status(400).json({ error: 'Invalid id' });
+        return;
+      }
+      const { id } = parsed.data;
+
       await contactService.deleteContact(id);
       res.status(204).send();
     } catch (error) {
