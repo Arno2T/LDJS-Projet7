@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { contactService } from '../services/contactService';
 import { CreateContactSchema, UpdateContactSchema } from '../models/contactModel';
+import { parseIdParam } from './params';
 
 export const contactController = {
   async getAll(_req: Request, res: Response): Promise<void> {
@@ -14,7 +15,10 @@ export const contactController = {
 
   async getById(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = parseIdParam(req, res);
+      if (!id) return;
+
+
       const contact = await contactService.getContactById(id);
       res.json(contact);
     } catch (error) {
@@ -38,7 +42,9 @@ export const contactController = {
 
   async update(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = parseIdParam(req, res);
+      if (!id) return;
+
       const validatedData = UpdateContactSchema.parse(req.body);
       const contact = await contactService.updateContact(id, validatedData);
       res.json(contact);
@@ -53,7 +59,10 @@ export const contactController = {
 
   async delete(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = parseIdParam(req, res);
+
+      if (!id) return;
+
       await contactService.deleteContact(id);
       res.status(204).send();
     } catch (error) {

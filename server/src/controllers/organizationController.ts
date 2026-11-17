@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { organizationService } from '../services/organizationService';
 import { CreateOrganizationSchema, UpdateOrganizationSchema } from '../models/organizationModel';
+import { parseIdParam } from './params'; 
 
 export const organizationController = {
   async getAll(_req: Request, res: Response): Promise<void> {
@@ -14,7 +15,9 @@ export const organizationController = {
 
   async getById(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = parseIdParam(req, res);
+      if (!id) return;
+
       const organization = await organizationService.getOrganizationById(id);
       res.json(organization);
     } catch (error) {
@@ -38,7 +41,9 @@ export const organizationController = {
 
   async update(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = parseIdParam(req, res);
+      if (!id) return;
+
       const validatedData = UpdateOrganizationSchema.parse(req.body);
       const organization = await organizationService.updateOrganization(id, validatedData);
       res.json(organization);
@@ -53,7 +58,9 @@ export const organizationController = {
 
   async delete(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
+      const id = parseIdParam(req, res);
+      if (!id) return;
+
       await organizationService.deleteOrganization(id);
       res.status(204).send();
     } catch (error) {
