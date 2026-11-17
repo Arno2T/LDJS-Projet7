@@ -11,6 +11,17 @@ updates:
     groups:
       server-minor-patch:
         update-types: [minor, patch]
+    ignore:
+      # Majors hors périmètre du projet : migration à planifier séparément
+      - dependency-name: "prisma"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@prisma/client"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      # Types alignés sur le runtime Node 24 (.nvmrc)
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: npm
     directory: /client
@@ -23,6 +34,17 @@ updates:
     groups:
       client-minor-patch:
         update-types: [minor, patch]
+    ignore:
+      # Majors hors périmètre du projet : migration à planifier séparément
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "tailwindcss"
+        update-types: ["version-update:semver-major"]
+      # vite et son plugin évoluent ensemble (plugin-react 6 exige un Vite plus récent)
+      - dependency-name: "vite"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@vitejs/plugin-react"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
