@@ -34,6 +34,8 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: server/package-lock.json
+      - name: Audit dependencies (high+)
+        run: npm audit --audit-level=high
       - name: Install dependencies
         run: npm ci
       - name: Generate Prisma Client
@@ -71,6 +73,8 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: client/package-lock.json
+      - name: Audit dependencies (high+)
+        run: npm audit --audit-level=high
       - name: Install dependencies
         run: npm ci
       - name: Lint
@@ -124,3 +128,21 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@e805d875275f728fac1885b413934be6d7c63f65 # v8.4.1
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  gitleaks:
+    name: Gitleaks (secrets scan)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Gitleaks scan
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: false
