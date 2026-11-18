@@ -1,0 +1,12 @@
+node_modules
+dist
+coverage
+.env*
+src/tests
+src/**/*.test.ts
+src/**/*.test.tsx
+vitest.config.ts
+eslint.config.js
+*.log
+Dockerfile
+.dockerignore
