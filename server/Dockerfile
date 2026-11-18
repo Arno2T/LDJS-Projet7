@@ -6,18 +6,18 @@ WORKDIR /app
 
 FROM base AS build
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts && npm rebuild @prisma/engines
 COPY prisma ./prisma
-RUN npx prisma generate
+RUN npm run prisma:generate
 COPY tsconfig.json ./
 COPY src ./src
 RUN npm run build
 
 FROM base AS deps
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+RUN npm ci --omit=dev --ignore-scripts && npm rebuild @prisma/engines && npm cache clean --force
 COPY prisma ./prisma
-RUN npx prisma generate
+RUN npm run prisma:generate
 
 FROM base AS runtime
 ENV NODE_ENV=production \
