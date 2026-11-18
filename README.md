@@ -80,6 +80,37 @@ npm run dev
 
 The application will be available at `http://localhost:4200`
 
+## Running with Docker
+
+Requires Docker Engine with the Compose plugin (`docker compose`). No local Node.js or `.env` file is needed.
+
+```bash
+docker compose up -d --build
+```
+
+The application is available at `http://localhost:4200`.
+
+| Service  | Image                    | Exposed port | Role                                                        |
+| -------- | ------------------------ | ------------ | ----------------------------------------------------------- |
+| `client` | `orion-crm-client:local` | `4200`       | nginx: serves the React build and proxies `/api` to `server` |
+| `server` | `orion-crm-server:local` | none         | Express API + SQLite, reachable only through the proxy      |
+
+- The SQLite database is stored in the named volume `db-data` (`/app/data` in the container).
+  Prisma migrations run automatically when the server starts.
+- `client` starts only once `server` passes its healthcheck (`/api/health`).
+
+Useful commands:
+
+```bash
+docker compose ps                         # both services should be "healthy"
+curl http://localhost:4200/api/health     # API health through the nginx proxy
+docker compose logs -f server             # follow API logs
+docker compose down                       # stop and remove containers (data is kept)
+docker compose down -v                    # also delete the db-data volume (data is lost)
+```
+
+> `down -v` permanently deletes the database. Back it up first.
+
 ## Available Scripts
 
 ### Backend (server/)
