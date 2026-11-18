@@ -1,0 +1,14 @@
+node_modules
+dist
+coverage
+.env
+.env.*
+prisma/*.db
+prisma/*.db-journal
+src/**/*.test.ts
+src/tests
+vitest.config.ts
+eslint.config.mjs
+*.log
+Dockerfile
+.dockerignore
