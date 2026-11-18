@@ -28,7 +28,12 @@ COPY package.json ./
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY prisma ./prisma
-RUN mkdir -p /app/data && chown node:node /app/data
+
+# npm/npx/corepack are only needed at build time: removing them shrinks the attack surface
+RUN mkdir -p /app/data && chown node:node /app/data \
+ && rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+           /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
+
 USER node
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
