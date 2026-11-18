@@ -1,0 +1,29 @@
+# Orion CRM - local stack: docker compose up -d --build, then http://localhost:4200
+
+name: orion-crm
+
+services:
+  # Name required by nginx.conf (proxy_pass http://server:8080)
+  server:
+    build:
+      context: ./server
+    image: orion-crm-server:local
+    volumes:
+      - db-data:/app/data
+    init: true
+    restart: unless-stopped
+
+  client:
+    build:
+      context: ./client
+    image: orion-crm-client:local
+    ports:
+      - "4200:8080"
+    depends_on:
+      server:
+        condition: service_healthy
+    init: true
+    restart: unless-stopped
+
+volumes:
+  db-data:

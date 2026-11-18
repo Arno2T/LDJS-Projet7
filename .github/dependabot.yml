@@ -59,4 +59,35 @@ updates:
     groups:
       actions:
         patterns: ["*"]
-        
+
+  - package-ecosystem: docker
+    directory: /server
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(docker-server)"
+    groups:
+      docker-server-minor-patch:
+        update-types: [minor, patch]
+    ignore:
+      # Runtime aligné sur Node 24 (.nvmrc, CI)
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: docker
+    directory: /client
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(docker-client)"
+    groups:
+      docker-client-minor-patch:
+        update-types: [minor, patch]
+    ignore:
+      # Build Vite aligné sur Node 24 (.nvmrc, CI)
+      - dependency-name: "node"
+        update-types: ["version-update:semver-major"]
