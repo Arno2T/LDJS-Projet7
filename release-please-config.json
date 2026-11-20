@@ -1,0 +1,30 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "release-type": "simple",
+  "include-component-in-tag": false,
+  "include-v-in-tag": true,
+  "initial-version": "0.1.0",
+  "bump-minor-pre-major": true,
+  "bootstrap-sha": "33aa49df69b9b729cc45399b36c8db8136aefc16",
+  "changelog-sections": [
+    { "type": "feat", "section": "Features" },
+    { "type": "fix", "section": "Bug Fixes" },
+    { "type": "perf", "section": "Performance" },
+    { "type": "revert", "section": "Reverts" },
+    { "type": "build", "section": "Build & containers" },
+    { "type": "ci", "section": "CI/CD" },
+    { "type": "docs", "section": "Documentation" },
+    { "type": "test", "section": "Tests", "hidden": true },
+    { "type": "chore", "section": "Chores", "hidden": true },
+    { "type": "refactor", "section": "Refactoring", "hidden": true }
+  ],
+  "packages": {
+    ".": {
+      "package-name": "orion-crm",
+      "extra-files": [
+        { "type": "json", "path": "server/package.json", "jsonpath": "$.version" },
+        { "type": "json", "path": "client/package.json", "jsonpath": "$.version" }
+      ]
+    }
+  }
+}
