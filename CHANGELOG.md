@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0](https://github.com/Arno2T/LDJS-Projet7/compare/v0.1.0...v0.2.0) (2026-11-20)
+
+
+### Features
+
+* **server:** add structured JSON logging with pino and pino-http ([#30](https://github.com/Arno2T/LDJS-Projet7/issues/30)) ([f34c2f9](https://github.com/Arno2T/LDJS-Projet7/commit/f34c2f9e36ebe16c27a18fa3407cdce542ed2556))
+
 ## 0.1.0 (2026-11-20)
 
 
