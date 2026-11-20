@@ -137,3 +137,44 @@ describe('createApp', () => {
     expect(JSON.stringify(line)).not.toContain('super-secret');
   });
 });
+
+describe('CORS', () => {
+  it('autorise par défaut l’origine du client de dev (http://localhost:4200)', async () => {
+    const res = await fetch(`${baseUrl}/api/health`, { headers: { Origin: 'http://localhost:4200' } });
+
+    expect(res.headers.get('access-control-allow-origin')).toBe('http://localhost:4200');
+  });
+
+  it('ne renvoie jamais une autre origine (plus de wildcard *)', async () => {
+    const res = await fetch(`${baseUrl}/api/health`, { headers: { Origin: 'https://evil.example' } });
+
+    // The header stays on the allowed origin: the browser blocks the foreign page
+    expect(res.headers.get('access-control-allow-origin')).toBe('http://localhost:4200');
+    expect(res.headers.get('access-control-allow-origin')).not.toBe('*');
+  });
+
+  it('utilise CORS_ORIGIN quand elle est définie, y compris sur le preflight OPTIONS', async () => {
+    vi.stubEnv('CORS_ORIGIN', 'https://crm.example.com');
+    // CORS_ORIGIN is read when the app is built: build a dedicated one
+    const corsServer = createApp(testLogger).listen(0);
+    try {
+      await new Promise<void>((resolve) => corsServer.once('listening', resolve));
+      const url = `http://127.0.0.1:${(corsServer.address() as AddressInfo).port}/api/organizations`;
+
+      const res = await fetch(url, {
+        method: 'OPTIONS',
+        headers: {
+          Origin: 'https://crm.example.com',
+          'Access-Control-Request-Method': 'POST',
+          'Access-Control-Request-Headers': 'Content-Type',
+        },
+      });
+
+      expect(res.status).toBe(204);
+      expect(res.headers.get('access-control-allow-origin')).toBe('https://crm.example.com');
+    } finally {
+      vi.unstubAllEnvs();
+      await new Promise<void>((resolve) => corsServer.close(() => resolve()));
+    }
+  });
+});

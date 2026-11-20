@@ -38,6 +38,8 @@ cp .env.example .env
 
 Edit `.env` if needed (default values should work for local development).
 
+`CORS_ORIGIN` (optional) sets the only origin allowed to call the API from a browser; it defaults to the Vite dev client `http://localhost:4200`. It is not needed with Docker, where nginx serves the client and proxies `/api` on the same origin.
+
 ### 4. Initialize the database
 
 ```bash

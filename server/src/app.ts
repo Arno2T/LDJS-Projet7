@@ -28,7 +28,7 @@ export function createApp(logger: Logger = defaultLogger): Application {
       },
     }),
   );
-  app.use(cors());
+  app.use(cors({ origin: process.env.CORS_ORIGIN ?? 'http://localhost:4200' }));
   app.use(express.json());
 
   // Routes
