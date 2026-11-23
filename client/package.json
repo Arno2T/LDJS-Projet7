@@ -1,6 +1,6 @@
 {
   "name": "orion-crm-client",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Frontend for Orion CRM application",
   "type": "module",
   "scripts": {

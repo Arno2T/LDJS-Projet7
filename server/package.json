@@ -1,6 +1,6 @@
 {
   "name": "orion-crm-server",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Backend API for Orion CRM application",
   "main": "dist/index.js",
   "scripts": {
