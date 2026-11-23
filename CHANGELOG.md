@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/Arno2T/LDJS-Projet7/compare/v0.2.0...v0.2.1) (2026-11-23)
+
+
+### Bug Fixes
+
+* **client:** exclude docker healthcheck from nginx access logs and patch libxml2 CVE ([#34](https://github.com/Arno2T/LDJS-Projet7/issues/34)) ([1f03e94](https://github.com/Arno2T/LDJS-Projet7/commit/1f03e9438c7b6a90da3a84567bd024ca0a22df7d))
+
 ## [0.2.0](https://github.com/Arno2T/LDJS-Projet7/compare/v0.1.0...v0.2.0) (2026-11-20)
 
 
