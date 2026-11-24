@@ -252,6 +252,10 @@ p7-dfsjs-starter/
 - `DELETE /api/contacts/:id` - Delete contact
 - `GET /api/contacts/stats` - Get contact statistics
 
+### Logs
+
+- `POST /api/logs` - Record a browser error (`{ level, message, stack?, path? }`, unknown keys rejected). Returns `204`, `400` if invalid, `429` after 30 requests per minute per IP. Used by the client to send uncaught errors to the server logs (and to ELK).
+
 ## Technology Stack
 
 ### Frontend

@@ -2,13 +2,20 @@ import express, { Application, NextFunction, Request, Response } from 'express';
 import cors from 'cors';
 import type { Logger } from 'pino';
 import { pinoHttp } from 'pino-http';
+import { rateLimit } from 'express-rate-limit';
 import { logger as defaultLogger } from './logger';
 import organizationRoutes from './routes/organizationRoutes';
 import contactRoutes from './routes/contactRoutes';
+import { logController } from './controllers/logController';
+
+// POST /api/logs is public: max requests per minute and per IP, then 429
+export const LOGS_RATE_LIMIT = 30;
 
 // Builds the Express app without listening: index.ts starts it, the tests call it directly
 export function createApp(logger: Logger = defaultLogger): Application {
   const app = express();
+  // Behind nginx (Docker): trust one proxy so req.ip is the browser IP, not nginx (rate limit)
+  app.set('trust proxy', 1);
 
   // First middleware, so every request is logged (404 included)
   app.use(
@@ -16,7 +23,9 @@ export function createApp(logger: Logger = defaultLogger): Application {
       logger,
       // The Docker healthcheck calls /api/health every 30 s: noise
       autoLogging: { ignore: (req) => req.url === '/api/health' },
-      customLogLevel: (_req, res, err) => {
+      customLogLevel: (req, res, err) => {
+        // An accepted browser log is already written by the controller: no second line
+        if (req.url === '/api/logs' && res.statusCode === 204) return 'silent';
         if (err || res.statusCode >= 500) return 'error';
         if (res.statusCode >= 400) return 'warn';
         return 'info';
@@ -38,6 +47,11 @@ export function createApp(logger: Logger = defaultLogger): Application {
 
   app.use('/api/organizations', organizationRoutes);
   app.use('/api/contacts', contactRoutes);
+  app.post(
+    '/api/logs',
+    rateLimit({ windowMs: 60_000, limit: LOGS_RATE_LIMIT, standardHeaders: 'draft-8', legacyHeaders: false }),
+    logController.create,
+  );
 
   // 404 handler
   app.use((_req: Request, res: Response) => {
