@@ -1,0 +1,24 @@
+# Reads the json-file logs written by Docker, keeps only the Orion containers
+filebeat.inputs:
+  - type: filestream
+    id: docker-containers
+    paths:
+      - /var/lib/docker/containers/*/*.log
+    parsers:
+      - container:
+          stream: all
+          format: docker
+
+processors:
+  # Container id is taken from the path (/var/lib/docker/containers/<id>/...): keep this mount point
+  - add_docker_metadata:
+      host: "unix:///var/run/docker.sock"
+  # Only the app stack (compose project "orion-crm"), not ELK itself
+  - drop_event:
+      when:
+        not:
+          equals:
+            container.labels.com_docker_compose_project: "orion-crm"
+
+output.logstash:
+  hosts: ["logstash:5044"]
