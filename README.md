@@ -113,6 +113,61 @@ docker compose down -v                    # also delete the db-data volume (data
 
 > `down -v` permanently deletes the database. Back it up first.
 
+## Monitoring (local ELK)
+
+An optional ELK stack (Elastic 8.19.25) centralizes the logs of the `orion-crm` containers. It is a **local-only** tool: it runs from a separate Compose file and never runs in CI.
+
+```
+server (pino JSON) ┐
+client (nginx)     ┴→ stdout → Docker log files → Filebeat → Logstash → Elasticsearch → Kibana
+```
+
+- **Filebeat** reads the Docker log files of the `orion-crm` project only and adds container metadata. Its registry (volume `filebeat-data`) stores read positions, so no log is lost while Logstash is down.
+- **Logstash** parses pino JSON lines into fields (`level`, `req.method`, `req.url`, `res.statusCode`, `responseTime`, `err`), uses the pino `time` as `@timestamp` and writes to the daily index `orion-logs-YYYY.MM.DD`. Plain-text lines (nginx, Prisma migrations) get `level: info` (stdout) or `warn` (stderr).
+- **Elasticsearch** stores and indexes the logs; **Kibana** is used to search and visualize them.
+- Healthchecks are not logged at the source (`/api/health` on the server, `/healthz` on the client).
+
+### Setup
+
+Requires about 4 GB of free RAM (`mem_limit`: Elasticsearch 2 GB, Logstash 1 GB, Kibana 1 GB, Filebeat 256 MB).
+
+```bash
+cp elk/elk.env.example elk/elk.env
+```
+
+Adapt `elk/elk.env` (git-ignored) to your Docker installation:
+
+| Variable                | Default                      | How to find it                                                    |
+| ----------------------- | ---------------------------- | ----------------------------------------------------------------- |
+| `DOCKER_CONTAINERS_DIR` | `/var/lib/docker/containers` | `$(docker info --format '{{.DockerRootDir}}')/containers`         |
+| `DOCKER_SOCK`           | `/var/run/docker.sock`       | `docker context inspect --format '{{.Endpoints.docker.Host}}'` (without `unix://`) |
+
+With Docker installed as a snap: `DOCKER_CONTAINERS_DIR=/var/snap/docker/common/var-lib-docker/containers`.
+
+### Run
+
+```bash
+docker compose up -d --build                                              # the application
+docker compose -f docker-compose-elk.yml --env-file elk/elk.env up -d     # the log stack
+docker compose -f docker-compose-elk.yml ps                               # elasticsearch, logstash, kibana "healthy"
+```
+
+Open Kibana at `http://127.0.0.1:5601`, create a data view with the index pattern `orion-logs-*` and the timestamp field `@timestamp`, then use **Discover**. Example KQL queries:
+
+```
+level : "error"
+res.statusCode >= 400
+container.labels.com_docker_compose_service : "server"
+```
+
+Stop the stack with `docker compose -f docker-compose-elk.yml down` (add `-v` to delete the indexed logs and the Filebeat registry).
+
+### Security notes
+
+- `xpack.security.enabled=false`: no authentication or TLS. This is acceptable **only locally**: Elasticsearch (`9200`) and Kibana (`5601`) are bound to `127.0.0.1`, and the Beats port `5044` is not published. A shared or production deployment requires security enabled (TLS, users, roles).
+- Filebeat runs as `root` and mounts the Docker socket (read-only) to read container logs and metadata. Access to the Docker socket is equivalent to root on the host: this is an accepted risk for local use.
+- HTTP headers (`Authorization`, `Cookie`) are never logged by the server.
+
 ## Available Scripts
 
 ### Backend (server/)
