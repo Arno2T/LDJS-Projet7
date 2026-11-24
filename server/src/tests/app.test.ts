@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeAll, afterAll, beforeEach } from 'vites
 import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import pino from 'pino';
-import { createApp } from '../app';
+import { createApp, LOGS_RATE_LIMIT } from '../app';
 import { loggerOptions } from '../logger';
 
 // Real routes need the database: replace them with a tiny router that can succeed or throw
@@ -175,6 +175,83 @@ describe('CORS', () => {
     } finally {
       vi.unstubAllEnvs();
       await new Promise<void>((resolve) => corsServer.close(() => resolve()));
+    }
+  });
+});
+
+describe('POST /api/logs (logs du navigateur)', () => {
+  const validLog = { level: 'error', message: 'Cannot read properties of undefined', stack: 'TypeError: …', path: '/contacts' };
+
+  function postLog(body: unknown, url = baseUrl): Promise<Response> {
+    return fetch(`${url}/api/logs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'User-Agent': 'vitest-browser' },
+      body: JSON.stringify(body),
+    });
+  }
+
+  it('accepte un log valide (204) et l’écrit avec pino au niveau demandé', async () => {
+    const res = await postLog(validLog);
+    expect(res.status).toBe(204);
+
+    let line: LogLine | undefined;
+    await vi.waitFor(() => {
+      line = lines.find((l) => l.origin === 'browser');
+      expect(line).toBeDefined();
+    });
+    expect(line).toMatchObject({
+      level: 'error',
+      service: 'orion-server',
+      msg: 'Cannot read properties of undefined',
+      origin: 'browser',
+      browser: { path: '/contacts', stack: 'TypeError: …', userAgent: 'vitest-browser' },
+      req: { method: 'POST', url: '/api/logs' },
+    });
+  });
+
+  it('n’ajoute pas de seconde ligne « request completed » pour un log accepté', async () => {
+    await postLog({ level: 'info', message: 'hello' });
+    // A logged request in between proves the /api/logs access line really was skipped
+    await fetch(`${baseUrl}/api/organizations`);
+    await requestLog('/api/organizations');
+
+    const accessLines = lines.filter(
+      (l) => (l.req as { url?: string } | undefined)?.url === '/api/logs' && l.msg === 'request completed',
+    );
+    expect(accessLines).toHaveLength(0);
+  });
+
+  it.each([
+    ['un champ inconnu', { ...validLog, password: 'secret' }],
+    ['un niveau inconnu', { ...validLog, level: 'fatal' }],
+    ['un message vide', { ...validLog, message: '   ' }],
+    ['un message trop long', { ...validLog, message: 'x'.repeat(1001) }],
+    ['une stack trop longue', { ...validLog, stack: 'x'.repeat(5001) }],
+  ])('refuse %s (400) sans écrire le contenu dans les logs', async (_case, body) => {
+    const res = await postLog(body);
+
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'Invalid log entry' });
+    expect(await requestLog('/api/logs')).toMatchObject({ level: 'warn', res: { statusCode: 400 } });
+    expect(lines.some((l) => l.origin === 'browser')).toBe(false);
+  });
+
+  it(`limite à ${LOGS_RATE_LIMIT} logs par minute et par IP (429 ensuite)`, async () => {
+    // Dedicated app: its own rate-limit counter, the other tests are not affected
+    const limitedServer = createApp(testLogger).listen(0);
+    try {
+      await new Promise<void>((resolve) => limitedServer.once('listening', resolve));
+      const url = `http://127.0.0.1:${(limitedServer.address() as AddressInfo).port}`;
+
+      for (let i = 0; i < LOGS_RATE_LIMIT; i++) {
+        expect((await postLog({ level: 'info', message: `log ${i}` }, url)).status).toBe(204);
+      }
+      const res = await postLog({ level: 'info', message: 'one too many' }, url);
+
+      expect(res.status).toBe(429);
+      expect(res.headers.get('ratelimit-policy')).toContain(`${LOGS_RATE_LIMIT}`);
+    } finally {
+      await new Promise<void>((resolve) => limitedServer.close(() => resolve()));
     }
   });
 });
