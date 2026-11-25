@@ -152,11 +152,43 @@ docker compose -f docker-compose-elk.yml --env-file elk/elk.env up -d     # the 
 docker compose -f docker-compose-elk.yml ps                               # elasticsearch, logstash, kibana "healthy"
 ```
 
-Open Kibana at `http://127.0.0.1:5601`, create a data view with the index pattern `orion-logs-*` and the timestamp field `@timestamp`, then use **Discover**. Example KQL queries:
+Once Kibana is healthy, import the versioned dashboard and its data view (`orion-logs-*`, timestamp `@timestamp`). The import is idempotent and can be re-run:
+
+```bash
+curl -X POST 'http://127.0.0.1:5601/api/saved_objects/_import?overwrite=true' \
+  -H 'kbn-xsrf: true' --form file=@elk/kibana/orion-dashboard.ndjson
+```
+
+Open Kibana at `http://127.0.0.1:5601`, then **Dashboards → Orion Dashboard** (last 24 hours):
+
+| Panel                         | Purpose                                                       |
+| ----------------------------- | ------------------------------------------------------------- |
+| Total logs                    | Overall log volume                                            |
+| Server errors (5xx)           | `res.statusCode >= 500`                                       |
+| Browser errors                | `origin : "browser"` (sent by the client to `POST /api/logs`) |
+| p95 response time             | 95th percentile of `responseTime` (ms)                        |
+| Log volume by level           | Logs over time, split by `level`                              |
+| Level distribution            | Share of `info` / `warn` / `error`                            |
+| Server vs browser errors      | 5xx and browser errors over time                              |
+| HTTP status codes             | Responses by `res.statusCode`                                 |
+| Top routes                    | Most called `req.method` + `req.url`, median and p95 latency  |
+| Response time                 | Median and p95 of `responseTime` over time                    |
+
+The dashboard lives in Elasticsearch (`.kibana` index, volume `es-data`): after editing it in Kibana, export it again so the change is versioned:
+
+```bash
+curl -X POST 'http://127.0.0.1:5601/api/saved_objects/_export' -H 'kbn-xsrf: true' \
+  -H 'Content-Type: application/json' \
+  -d '{"objects":[{"type":"dashboard","id":"3b22cadb-02ef-4ed3-9760-96986e81fa20"}],"includeReferencesDeep":true}' \
+  > elk/kibana/orion-dashboard.ndjson
+```
+
+Use **Discover** for ad hoc searches. Example KQL queries:
 
 ```
 level : "error"
 res.statusCode >= 400
+origin : "browser"
 container.labels.com_docker_compose_service : "server"
 ```
 
