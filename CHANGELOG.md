@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/Arno2T/LDJS-Projet7/compare/v0.2.1...v0.3.0) (2026-11-25)
+
+
+### Features
+
+* collect browser errors through POST /api/logs ([#40](https://github.com/Arno2T/LDJS-Projet7/issues/40)) ([82a60c7](https://github.com/Arno2T/LDJS-Projet7/commit/82a60c77142d20cea11eff6791962c58122d4de4))
+
 ## [0.2.1](https://github.com/Arno2T/LDJS-Projet7/compare/v0.2.0...v0.2.1) (2026-11-23)
 
 
